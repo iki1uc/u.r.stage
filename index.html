@@ -1,665 +1,730 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<title>RESPO · TRIGGER ENGINE · 3-Achsen · Ebenen-Synchron</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌀 STAGE‑Reich · Index · Corridor · Legitimation</title>
 
-<style>
-:root {
-    --bg: #0a0a0f;
-    --fg: #0ff;
-    --accent: #6cf;
-    --level1: #f44;
-    --level2: #4f4;
-    --level3: #44f;
-    --axis-x: #ff6b6b;
-    --axis-y: #6bff6b;
-    --axis-z: #6b6bff;
-}
+  <!-- ========================================================= -->
+  <!-- KERN-MODULE (global, werden von allen Etagen genutzt)     -->
+  <!-- Diese <script>-Tags versuchen die ECHTEN Vorgänger-Module  -->
+  <!-- zu laden. Existieren sie nicht (404), greift weiter unten  -->
+  <!-- der Eigenbetrieb-Fallback — die Seite bleibt so in beiden  -->
+  <!-- Fällen funktionsfähig, ohne dass eines das andere stört.   -->
+  <!-- ========================================================= -->
+  <script src="coord.js"></script>
+  <script src="aufzug.js"></script>
+  <script src="OS_CORE.js"></script>
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-    background: var(--bg);
-    color: var(--fg);
-    font-family: 'Consolas', monospace;
-    height: 100vh;
-    overflow: hidden;
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    gap: 8px;
-    padding: 8px;
-}
+  <!-- ========================================================= -->
+  <!-- ACHSEN-MODULE (b/h/t – HDF-Cube-Grundlage)               -->
+  <!-- ========================================================= -->
+  <script src="b/axiom.map.js"></script>
+  <script src="h/axiom.map.js"></script>
+  <script src="t/axiom.map.js"></script>
 
-/* ===== TOP: KONTROLLZENTRUM ===== */
-#control-center {
-    background: #111;
-    border: 2px solid var(--fg);
-    border-radius: 12px;
-    padding: 12px 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 16px;
-    align-items: center;
-}
+  <!-- ========================================================= -->
+  <!-- NC-SUITE (Figur, Kraft, Space, Time)                     -->
+  <!-- ========================================================= -->
+  <script src="NC_figur.js"></script>
+  <script src="NC_kraft.js"></script>
+  <script src="NC_space.js"></script>
+  <script src="NC_time.js"></script>
+  <script src="NC.suite"></script> <!-- bündelt die vier Module -->
 
-.btn-group {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 8px;
-    background: #1a1a2a;
-}
+  <!-- ========================================================= -->
+  <!-- VEC-MODULE (Vektoren & Koordinaten)                       -->
+  <!-- ========================================================= -->
+  <script src="vec.js"></script>
+  <script src="vec3.js"></script>
+  <script src="vec9.js"></script>
 
-.btn-group label {
-    font-size: 11px;
-    color: #888;
-    margin-right: 4px;
-}
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-.btn-trigger {
-    background: #222;
-    color: var(--fg);
-    border: 1px solid #444;
-    padding: 6px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 13px;
-    transition: all 0.15s ease;
-    position: relative;
-}
-.btn-trigger:hover { background: #333; }
-.btn-trigger:active { transform: scale(0.95); }
+    body {
+      background: #0b0b0b;
+      color: #e0e0e0;
+      font-family: 'Consolas', 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
 
-.btn-trigger.level1 { border-color: var(--level1); color: var(--level1); }
-.btn-trigger.level2 { border-color: var(--level2); color: var(--level2); }
-.btn-trigger.level3 { border-color: var(--level3); color: var(--level3); }
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      padding: 24px 20px 30px;
+    }
 
-.btn-trigger.active {
-    background: var(--fg);
-    color: #000;
-    box-shadow: 0 0 20px var(--fg);
-}
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #2a3a4a;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
 
-.btn-trigger.axis-x { border-color: var(--axis-x); color: var(--axis-x); }
-.btn-trigger.axis-y { border-color: var(--axis-y); color: var(--axis-y); }
-.btn-trigger.axis-z { border-color: var(--axis-z); color: var(--axis-z); }
+    .header h1 {
+      color: #6cf;
+      font-size: 26px;
+      font-weight: 300;
+      letter-spacing: 2px;
+    }
 
-.btn-trigger.axis-x.active { background: var(--axis-x); color: #000; }
-.btn-trigger.axis-y.active { background: var(--axis-y); color: #000; }
-.btn-trigger.axis-z.active { background: var(--axis-z); color: #000; }
+    .header h1 small {
+      color: #5a7a8a;
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 1px;
+    }
 
-#status-bar {
-    margin-left: auto;
-    font-size: 12px;
-    color: #888;
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-.status-dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #333;
-    transition: all 0.3s;
-}
-.status-dot.on { background: #0f0; box-shadow: 0 0 10px #0f0; }
-.status-dot.off { background: #f00; }
+    .status-leds {
+      display: flex;
+      gap: 18px;
+      font-size: 12px;
+      color: #5a7a8a;
+    }
 
-/* ===== MIDDLE: EBENEN + GRID ===== */
-#layers {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-    height: 100%;
-    min-height: 0;
-}
+    .status-leds span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
 
-.layer {
-    background: #0e0e1a;
-    border: 1px solid #222;
-    border-radius: 10px;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    transition: all 0.4s ease;
-}
+    .led {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #2a4a5a;
+      transition: 0.3s;
+    }
 
-.layer-header {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 8px;
-    font-size: 12px;
-    border-bottom: 1px solid #222;
-    margin-bottom: 6px;
-}
+    .led.on {
+      background: #8cf0d0;
+      box-shadow: 0 0 12px #8cf0d0;
+    }
 
-.layer-1 .layer-header { color: var(--level1); border-color: var(--level1); }
-.layer-2 .layer-header { color: var(--level2); border-color: var(--level2); }
-.layer-3 .layer-header { color: var(--level3); border-color: var(--level3); }
+    .led.pulse {
+      background: #f0d080;
+      animation: pulse 1.2s infinite;
+    }
 
-.layer-grid {
-    display: grid;
-    gap: 3px;
-    flex: 1;
-    align-content: start;
-}
+    .led.off {
+      background: #2a4a5a;
+    }
 
-.layer-grid .cell {
-    aspect-ratio: 1;
-    border-radius: 4px;
-    background: #151525;
-    border: 1px solid #2a2a3a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 9px;
-    color: #666;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    user-select: none;
-}
+    .led.sync {
+      background: #b388ff;
+      box-shadow: 0 0 12px #b388ff;
+    }
 
-.layer-grid .cell.filled {
-    background: #1a2a3a;
-    border-color: #3a5a7a;
-    color: #aac;
-}
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: scale(0.8); }
+      50%      { opacity: 1; transform: scale(1.2); }
+    }
 
-.layer-grid .cell.active {
-    border-color: var(--fg);
-    box-shadow: 0 0 12px var(--fg);
-    transform: scale(1.05);
-    z-index: 2;
-}
+    .section-title {
+      color: #f0d080;
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 1.5px;
+      margin: 24px 0 12px;
+      border-bottom: 1px solid #1a2a3a;
+      padding-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-.layer-grid .cell.triggered {
-    animation: pulse-trigger 0.6s ease;
-}
+    .section-title .badge {
+      font-size: 10px;
+      color: #5a7a8a;
+      font-weight: 300;
+    }
 
-@keyframes pulse-trigger {
-    0% { transform: scale(1); box-shadow: 0 0 0 var(--fg); }
-    50% { transform: scale(1.3); box-shadow: 0 0 40px var(--fg); }
-    100% { transform: scale(1); box-shadow: 0 0 0 var(--fg); }
-}
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
 
-/* ===== BOTTOM: LOG / FEEDBACK ===== */
-#log {
-    background: #0a0a12;
-    border: 1px solid #1a1a2a;
-    border-radius: 8px;
-    padding: 8px 14px;
-    height: 70px;
-    overflow-y: auto;
-    font-size: 12px;
-    color: #6a6a8a;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-#log .entry {
-    display: flex;
-    gap: 12px;
-    border-bottom: 1px solid #111;
-    padding: 2px 0;
-}
-#log .time { color: #444; width: 70px; flex-shrink: 0; }
-#log .msg { color: #8af; }
-#log .msg.level1 { color: var(--level1); }
-#log .msg.level2 { color: var(--level2); }
-#log .msg.level3 { color: var(--level3); }
-#log .msg.axis-x { color: var(--axis-x); }
-#log .msg.axis-y { color: var(--axis-y); }
-#log .msg.axis-z { color: var(--axis-z); }
+    .card {
+      background: #111;
+      border: 1px solid #2a3a4a;
+      border-radius: 12px;
+      padding: 16px 18px;
+      text-decoration: none;
+      color: #e0e0e0;
+      display: block;
+      transition: all 0.2s ease;
+      position: relative;
+    }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 900px) {
-    #layers { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr 1fr; }
-    #control-center { flex-direction: column; align-items: stretch; }
-    #status-bar { margin-left: 0; justify-content: center; }
-}
-</style>
+    .card:hover {
+      border-color: #6cf;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .card .icon {
+      font-size: 28px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .card .name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #d0e0e8;
+    }
+
+    .card .path {
+      font-size: 10px;
+      color: #4a5a6a;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+
+    .card .coord-badge {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 10px;
+      color: #b388ff;
+      background: rgba(179, 136, 255, 0.08);
+      padding: 2px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(179, 136, 255, 0.1);
+    }
+
+    .card .status-tag {
+      display: inline-block;
+      font-size: 8px;
+      padding: 1px 10px;
+      border-radius: 12px;
+      margin-top: 6px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .card .status-tag.legit {
+      border: 1px solid #8cf0d0;
+      color: #8cf0d0;
+    }
+
+    .card .status-tag.pending {
+      border: 1px solid #f0d080;
+      color: #f0d080;
+    }
+
+    .coord-box {
+      background: #111;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid #2a3a4a;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #8ab0c0;
+      margin: 6px 0 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .coord-box .axis-label {
+      color: #f0d080;
+      font-weight: bold;
+    }
+
+    .coord-box .stage-entry {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 4px;
+      border-bottom: 1px solid #0e1620;
+    }
+
+    .coord-box .stage-entry .id {
+      color: #d0e0e8;
+    }
+
+    .coord-box .stage-entry .pos {
+      color: #b388ff;
+    }
+
+    .log-box {
+      background: #111;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #2a3a4a;
+      font-size: 11px;
+      line-height: 1.6;
+      max-height: 160px;
+      overflow-y: auto;
+      color: #5a7a8a;
+      margin-top: 6px;
+    }
+
+    .log-box .entry {
+      border-bottom: 1px solid #0e1620;
+      padding: 2px 0;
+    }
+
+    .log-box .time {
+      color: #2a3a4a;
+    }
+
+    .log-box .floor {
+      color: #6cf;
+    }
+
+    .log-box .msg {
+      color: #8ab0c0;
+    }
+
+    .sync-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      background: #0e141c;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid #1a2a3a;
+      margin: 16px 0 6px;
+    }
+
+    .sync-bar .label {
+      font-size: 11px;
+      color: #b388ff;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sync-bar input {
+      flex: 1;
+      background: #1a1a2a;
+      border: 1px solid #2a3a4a;
+      color: #d0e0e8;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-family: inherit;
+      min-width: 120px;
+    }
+
+    .sync-bar input::placeholder {
+      color: #4a5a6a;
+    }
+
+    .sync-bar button {
+      background: #1a1a2a;
+      border: 1px solid #2a3a4a;
+      color: #9ab0c0;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .sync-bar button:hover {
+      background: #2a3a4a;
+      border-color: #6cf;
+      color: #d0e8f8;
+    }
+
+    .sync-bar button.sync {
+      border-color: rgba(179, 136, 255, 0.2);
+      color: #b388ff;
+    }
+
+    .sync-bar button.sync:hover {
+      background: rgba(179, 136, 255, 0.1);
+      border-color: #b388ff;
+    }
+
+    .footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 24px;
+      padding: 8px 16px;
+      background: #0e141c;
+      border-radius: 12px;
+      border: 1px solid #1a2a3a;
+      font-size: 10px;
+      color: #3a4a5a;
+    }
+
+    .footer .gold {
+      color: #f0d080;
+    }
+
+    .footer .stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #080c12;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #1a2a3a;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
 
-<!-- ===== KONTROLLZENTRUM ===== -->
-<div id="control-center">
-    <span style="font-weight:bold;color:var(--accent);">⚡ TRIGGER ENGINE</span>
+<div class="container">
 
-    <!-- EBENEN-TRIGGER -->
-    <div class="btn-group">
-        <label>EBENEN</label>
-        <button class="btn-trigger level1" data-level="1">❶ Etage 1</button>
-        <button class="btn-trigger level2" data-level="2">❷ Etage 2</button>
-        <button class="btn-trigger level3" data-level="3">❸ Etage 3</button>
+  <div class="header">
+    <h1>🌀 STAGE‑Reich <small>Corridor · Legitimation · Technik</small></h1>
+    <div class="status-leds">
+      <span><span class="led on" id="ledSystem"></span> SYSTEM</span>
+      <span><span class="led sync" id="ledSync"></span> SYNC</span>
+      <span><span class="led pulse" id="ledReich"></span> REICH</span>
     </div>
+  </div>
 
-    <!-- ACHSEN-TRIGGER -->
-    <div class="btn-group">
-        <label>ACHSEN</label>
-        <button class="btn-trigger axis-x" data-axis="x">X</button>
-        <button class="btn-trigger axis-y" data-axis="y">Y</button>
-        <button class="btn-trigger axis-z" data-axis="z">Z</button>
-    </div>
+  <div class="section-title">
+    🏢 ETAGEN · CORRIDOR
+    <span class="badge" id="floorCount">0 Etagen</span>
+  </div>
+  <div class="grid" id="floorGrid"></div>
 
-    <!-- GLOBALE TRIGGER -->
-    <div class="btn-group">
-        <label>GLOBAL</label>
-        <button class="btn-trigger" id="btn-sync">⟳ SYNC</button>
-        <button class="btn-trigger" id="btn-reset">⟲ RESET</button>
-        <button class="btn-trigger" id="btn-auto">▶ AUTO</button>
-    </div>
+  <div class="section-title">
+    🧭 KOORDINATEN · b/h/t · HDF-Cube
+    <span class="badge" id="coordCount">0 registriert</span>
+  </div>
+  <div class="coord-box" id="coordBox">
+    Koordinaten werden geladen…
+  </div>
 
-    <!-- STATUS -->
-    <div id="status-bar">
-        <span>● <span id="status-text">idle</span></span>
-        <span class="status-dot off" id="status-dot"></span>
-        <span id="counter">0/0</span>
-    </div>
+  <div class="sync-bar">
+    <span class="label"><span class="led sync" style="display:inline-block;width:8px;height:8px;"></span> arg.sync</span>
+    <input type="text" id="syncInput" placeholder="Nachricht an Etagen…" value="sync:orakel">
+    <button class="sync" id="btnSync">🔄 SYNC</button>
+    <button id="btnBroadcast">📡 BROADCAST</button>
+    <button id="btnResetAll">⟲ RESET</button>
+  </div>
+
+  <div class="section-title">
+    📜 GETEILTES LOG
+    <span class="badge" id="logCount">0 Einträge</span>
+  </div>
+  <div class="log-box" id="logBox"></div>
+
+  <div class="footer">
+    <span class="stat"><span class="gold">★</span> STAGE‑Reich · Corridor · Legitimation</span>
+    <span class="stat">🔷 <span id="fActive">0</span> aktive Etagen</span>
+    <span class="stat">⚡ <span id="fSyncCount">0</span> SYNCs</span>
+    <span class="stat">⌨️  s=Sync  b=Broadcast  r=Reset</span>
+  </div>
+
 </div>
 
-<!-- ===== EBENEN ===== -->
-<div id="layers">
-    <!-- Etage 1: 3×3 = 9 Zellen -->
-    <div class="layer layer-1" data-layer="1">
-        <div class="layer-header">
-            <span>❶ ETAGE 1 · 3×3</span>
-            <span id="layer-count-1">0/9</span>
-        </div>
-        <div class="layer-grid" id="grid-1" style="grid-template-columns:repeat(3,1fr);"></div>
-    </div>
+<script>
+  "use strict";
 
-    <!-- Etage 2: 9×9 = 81 Zellen -->
-    <div class="layer layer-2" data-layer="2">
-        <div class="layer-header">
-            <span>❷ ETAGE 2 · 9×9</span>
-            <span id="layer-count-2">0/81</span>
-        </div>
-        <div class="layer-grid" id="grid-2" style="grid-template-columns:repeat(9,1fr);"></div>
-    </div>
+  /* ==============================================================
+     STAGE‑Reich · Corridor · Legitimation
+     v1.1 — Bugfix am Kompatibilitäts-Fallback:
 
-    <!-- Etage 3: 27×27 = 729 Zellen -->
-    <div class="layer layer-3" data-layer="3">
-        <div class="layer-header">
-            <span>❸ ETAGE 3 · 27×27</span>
-            <span id="layer-count-3">0/729</span>
-        </div>
-        <div class="layer-grid" id="grid-3" style="grid-template-columns:repeat(27,1fr);"></div>
-    </div>
-</div>
+     Der ORIGINAL-Fallback für Aufzug.getSharedLog() gab bei jedem
+     Aufruf ein frisches, leeres Array zurück:
+        getSharedLog: function() { return []; }
+     Jeder .push(...) darauf landete in einem Array, das sofort
+     wieder verworfen wurde — im Eigenbetrieb (ohne echte aufzug.js)
+     blieb das Log für immer leer, obwohl der Code so aussah, als
+     würde er sammeln.
 
-<!-- ===== LOG ===== -->
-<div id="log">
-    <div class="entry"><span class="time">[INIT]</span><span class="msg">System bereit · 3 Ebenen · 3 Achsen</span></div>
-</div>
+     Fix: Der Fallback hält jetzt ein EINZIGES, persistentes
+     Array (_log), auf das getSharedLog() jedes Mal denselben
+     Verweis zurückgibt. Sobald eine echte aufzug.js vorhanden ist
+     (typeof Aufzug !== 'undefined'), greift dieser ganze Fallback-
+     Block gar nicht — dann läuft alles über die echten Funktionen
+     aus deinem Vorgänger-Modell. Beide Fälle stören sich nicht
+     gegenseitig.
+     ============================================================== */
 
-<script type="module">
-// ============================================================
-// 1. KONFIGURATION
-// ============================================================
-const LEVELS = {
-    1: { size: 3, total: 9,  gridId: 'grid-1', countId: 'layer-count-1' },
-    2: { size: 9, total: 81, gridId: 'grid-2', countId: 'layer-count-2' },
-    3: { size: 27, total: 729, gridId: 'grid-3', countId: 'layer-count-3' }
-};
+  // ─── 1. ETAGEN-REGISTRY (aus aufzug.js, falls vorhanden) ──────
+  if (typeof Aufzug === 'undefined') {
+    console.warn('⚠️ aufzug.js nicht gefunden – lege Eigenbetrieb-Fallback an.');
+    window.Aufzug = {
+      FLOORS: [],
+      _log: [],                              // fix: EIN persistentes Array …
+      init: function() {},
+      log: function(msg, floor) {
+        this._log.push({
+          time: new Date().toLocaleTimeString('de-DE'),
+          floor: floor || 'system',
+          msg: msg
+        });
+      },
+      setSharedValue: function() {},
+      getSharedValue: function() { return undefined; },
+      getSharedLog: function() { return this._log; }  // … statt jedes Mal ein neues
+    };
+  }
 
-const AXES = ['x', 'y', 'z'];
+  if (Aufzug.FLOORS.length === 0) {
+    Aufzug.FLOORS = [
+      { id: 'stage', name: '🎛️ Stage · Corridor', path: 'stage.html', icon: '🎛️', isRoot: false },
+      { id: 'ui', name: '🖥️ UI · Interface', path: 'ui.html', icon: '🖥️', isRoot: false },
+      { id: 'etage-8-orbit-viewer', name: '🌀 Orbit-Viewer · Etage 8', path: 'etage-8-orbit-viewer/index.html', icon: '🌀', isRoot: false },
+      { id: 'root', name: '🛗 ROOT', path: 'index.html', icon: '🛗', isRoot: true }
+    ];
+  }
 
-// ============================================================
-// 2. STATE
-// ============================================================
-const state = {
-    activeCells: {},      // { '1': Set, '2': Set, '3': Set }
-    triggeredCells: {},   // { '1': Set, '2': Set, '3': Set }
-    activeAxis: null,     // 'x' | 'y' | 'z' | null
-    activeLevel: null,    // 1 | 2 | 3 | null
-    autoMode: false,
-    timer: null,
-    log: []
-};
+  // ─── 2. KOORDINATEN-REGISTRIERUNG (aus coord.js, falls vorhanden) ──
+  if (typeof COORD === 'undefined') {
+    console.warn('⚠️ coord.js nicht gefunden – lege Eigenbetrieb-Fallback an.');
+    window.COORD = {
+      axes: {
+        b: 'Breite (X‑Achse)',
+        h: 'Höhe (Y‑Achse)',
+        t: 'Tiefe (Z‑Achse)'
+      },
+      stages: {},
+      register: function(id, x, y, z) {
+        this.stages[id] = { x, y, z };
+      },
+      get: function(id) {
+        return this.stages[id] || null;
+      }
+    };
+  }
 
-// Init Sets
-[1, 2, 3].forEach(l => {
-    state.activeCells[l] = new Set();
-    state.triggeredCells[l] = new Set();
-});
-
-// ============================================================
-// 3. GRID BAUEN
-// ============================================================
-function buildGrid(level) {
-    const cfg = LEVELS[level];
-    const grid = document.getElementById(cfg.gridId);
-    grid.innerHTML = '';
-    const total = cfg.total;
-
-    for (let i = 0; i < total; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.dataset.index = i;
-        cell.dataset.level = level;
-        cell.textContent = i + 1;
-        cell.addEventListener('click', () => toggleCell(level, i));
-        grid.appendChild(cell);
+  Aufzug.FLOORS.forEach(f => {
+    if (!f.isRoot && !COORD.stages[f.id]) {
+      const idx = Aufzug.FLOORS.indexOf(f);
+      COORD.register(f.id, idx + 1, 0, 0);
     }
-    updateCount(level);
-}
+  });
 
-function toggleCell(level, index) {
-    const set = state.activeCells[level];
-    const cell = getCell(level, index);
-    if (set.has(index)) {
-        set.delete(index);
-        cell.classList.remove('filled', 'active');
+  COORD.register('stage', 1, 0, 0);
+  COORD.register('ui', 2, 0, 0);
+  COORD.register('etage-8-orbit-viewer', 3, 8, 1);
+
+  if (!COORD.stages.b) COORD.register('b', 1, 0, 0);
+  if (!COORD.stages.h) COORD.register('h', 0, 1, 0);
+  if (!COORD.stages.t) COORD.register('t', 0, 0, 1);
+
+  // ─── 3. DOM-REFERENZEN ────────────────────────────────────────
+  const floorGrid = document.getElementById('floorGrid');
+  const coordBox = document.getElementById('coordBox');
+  const logBox = document.getElementById('logBox');
+  const syncInput = document.getElementById('syncInput');
+
+  // ─── 4. ETAGEN ANZEIGEN ──────────────────────────────────────
+  function renderFloors() {
+    floorGrid.innerHTML = '';
+    let count = 0;
+
+    Aufzug.FLOORS.forEach(f => {
+      if (f.isRoot) return;
+      count++;
+
+      const coord = COORD.get(f.id) || { x: '?', y: '?', z: '?' };
+      // Hinweis: Da jede Etage oben in Schritt 2 automatisch in COORD
+      // registriert wird, ist isLegit hier praktisch immer "true" —
+      // die "pending"-Optik greift aktuell nie. Wenn "Legitimation"
+      // eine echte Bedeutung haben soll (z.B. Datei wirklich erreichbar,
+      // Signatur geprüft o.ä.), muss dieser Check das tatsächlich
+      // prüfen statt nur "wurde registriert".
+      const isLegit = !!COORD.get(f.id);
+
+      const card = document.createElement('a');
+      card.className = 'card';
+      card.href = f.path;
+      card.innerHTML = `
+        <span class="icon">${f.icon || '📁'}</span>
+        <span class="name">${f.name}</span>
+        <span class="coord-badge">(${coord.x}, ${coord.y}, ${coord.z})</span>
+        <div class="path">${f.path}</div>
+        <span class="status-tag ${isLegit ? 'legit' : 'pending'}">${isLegit ? '✅ legitimiert' : '⏳ pending'}</span>
+      `;
+      floorGrid.appendChild(card);
+    });
+
+    document.getElementById('floorCount').textContent = `${count} Etagen`;
+    document.getElementById('fActive').textContent = count;
+  }
+
+  // ─── 5. KOORDINATEN ANZEIGEN ──────────────────────────────────
+  function renderCoords() {
+    const out = [];
+
+    out.push('<span class="axis-label">📐 Achsen:</span>');
+    Object.entries(COORD.axes || {}).forEach(([k, v]) => {
+      out.push(`&nbsp;&nbsp;• ${k}: ${v}`);
+    });
+
+    out.push('<br><span class="axis-label">🏢 Stages:</span>');
+    const entries = Object.entries(COORD.stages || {});
+    if (entries.length === 0) {
+      out.push('&nbsp;&nbsp;– keine registriert –');
     } else {
-        set.add(index);
-        cell.classList.add('filled');
-        cell.classList.add('active');
-        // 3-Achsen-Effekt: Wenn Axis aktiv, zusätzliche Zellen triggern
-        if (state.activeAxis) {
-            triggerAxisEffect(level, index);
-        }
-    }
-    updateCount(level);
-    log(`Zelle ${index+1} auf Etage ${level} ${set.has(index) ? 'aktiviert' : 'deaktiviert'}`);
-}
-
-function getCell(level, index) {
-    const cfg = LEVELS[level];
-    const grid = document.getElementById(cfg.gridId);
-    return grid.children[index];
-}
-
-function updateCount(level) {
-    const cfg = LEVELS[level];
-    const count = state.activeCells[level].size;
-    document.getElementById(cfg.countId).textContent = `${count}/${cfg.total}`;
-    updateTotalCounter();
-}
-
-function updateTotalCounter() {
-    const total = [1, 2, 3].reduce((sum, l) => sum + state.activeCells[l].size, 0);
-    document.getElementById('counter').textContent = `${total}/819`; // 9+81+729 = 819
-}
-
-// ============================================================
-// 4. TRIGGER-FUNKTIONEN
-// ============================================================
-function triggerLevel(level) {
-    const cfg = LEVELS[level];
-    const grid = document.getElementById(cfg.gridId);
-    const cells = grid.querySelectorAll('.cell');
-    const set = state.activeCells[level];
-
-    // Alle Zellen der Etage toggeln
-    cells.forEach((cell, i) => {
-        if (set.has(i)) {
-            set.delete(i);
-            cell.classList.remove('filled', 'active');
-        } else {
-            set.add(i);
-            cell.classList.add('filled', 'active');
-            // Trigger-Animation
-            cell.classList.remove('triggered');
-            void cell.offsetWidth;
-            cell.classList.add('triggered');
-        }
-    });
-
-    updateCount(level);
-    log(`🔴 Etage ${level} getriggert — ${cfg.total} Zellen`, `level${level}`);
-    document.getElementById('status-text').textContent = `Etage ${level} getriggert`;
-    document.getElementById('status-dot').className = 'status-dot on';
-    setTimeout(() => document.getElementById('status-dot').className = 'status-dot off', 1000);
-}
-
-function triggerAxis(axis) {
-    state.activeAxis = axis;
-    const axisColors = { x: 'axis-x', y: 'axis-y', z: 'axis-z' };
-
-    // Alle Zellen mit passenden Indizes aktivieren
-    [1, 2, 3].forEach(level => {
-        const cfg = LEVELS[level];
-        const size = cfg.size;
-        const set = state.activeCells[level];
-        const grid = document.getElementById(cfg.gridId);
-        const cells = grid.querySelectorAll('.cell');
-
-        cells.forEach((cell, i) => {
-            const row = Math.floor(i / size);
-            const col = i % size;
-            let match = false;
-            if (axis === 'x') match = col === 0 || col === size - 1 || col === Math.floor(size/2);
-            if (axis === 'y') match = row === 0 || row === size - 1 || row === Math.floor(size/2);
-            if (axis === 'z') match = (row + col) % 3 === 0;
-
-            if (match) {
-                set.add(i);
-                cell.classList.add('filled', 'active');
-                cell.classList.remove('triggered');
-                void cell.offsetWidth;
-                cell.classList.add('triggered');
-            } else {
-                // Nichts deaktivieren — nur hinzufügen
-            }
-        });
-        updateCount(level);
-    });
-
-    log(`📐 Achse ${axis.toUpperCase()} getriggert`, `axis-${axis}`);
-    document.getElementById('status-text').textContent = `Achse ${axis.toUpperCase()} aktiv`;
-}
-
-function triggerSync() {
-    log('⟳ SYNC — Alle Ebenen synchronisieren');
-
-    // Gleiche Muster auf allen Ebenen erzeugen
-    // Pattern: Alle Zellen mit Index durch 3 teilbar
-    [1, 2, 3].forEach(level => {
-        const cfg = LEVELS[level];
-        const set = state.activeCells[level];
-        const grid = document.getElementById(cfg.gridId);
-        const cells = grid.querySelectorAll('.cell');
-
-        // Erst alle leeren
-        set.clear();
-        cells.forEach(c => c.classList.remove('filled', 'active', 'triggered'));
-
-        // Dann Muster: primzahlen-artig
-        cells.forEach((cell, i) => {
-            if (i % 3 === 0 || i % 7 === 0) {
-                set.add(i);
-                cell.classList.add('filled', 'active');
-                cell.classList.remove('triggered');
-                void cell.offsetWidth;
-                cell.classList.add('triggered');
-            }
-        });
-        updateCount(level);
-    });
-
-    document.getElementById('status-text').textContent = 'SYNC OK';
-}
-
-function triggerReset() {
-    [1, 2, 3].forEach(level => {
-        state.activeCells[level].clear();
-        const cfg = LEVELS[level];
-        const grid = document.getElementById(cfg.gridId);
-        grid.querySelectorAll('.cell').forEach(c => {
-            c.classList.remove('filled', 'active', 'triggered');
-        });
-        updateCount(level);
-    });
-    state.activeAxis = null;
-    document.getElementById('status-text').textContent = 'RESET';
-    log('⟲ RESET — Alle Ebenen zurückgesetzt');
-}
-
-function toggleAuto() {
-    state.autoMode = !state.autoMode;
-    const btn = document.getElementById('btn-auto');
-    btn.classList.toggle('active', state.autoMode);
-    btn.textContent = state.autoMode ? '⏸ PAUSE' : '▶ AUTO';
-
-    if (state.autoMode) {
-        log('▶ AUTO-Modus gestartet');
-        state.timer = setInterval(() => {
-            const level = Math.floor(Math.random() * 3) + 1;
-            triggerLevel(level);
-        }, 2000);
-    } else {
-        clearInterval(state.timer);
-        log('⏸ AUTO-Modus pausiert');
-    }
-}
-
-// ============================================================
-// 5. AXIS-EFFEKT (bei Zellenklick mit aktiver Achse)
-// ============================================================
-function triggerAxisEffect(level, index) {
-    const cfg = LEVELS[level];
-    const size = cfg.size;
-    const row = Math.floor(index / size);
-    const col = index % size;
-    const set = state.activeCells[level];
-    const grid = document.getElementById(cfg.gridId);
-    const cells = grid.querySelectorAll('.cell');
-
-    // Wir triggern verbundene Zellen basierend auf Axis
-    let neighbors = [];
-    if (state.activeAxis === 'x') {
-        // Alle in gleicher Spalte
-        for (let r = 0; r < size; r++) {
-            neighbors.push(r * size + col);
-        }
-    } else if (state.activeAxis === 'y') {
-        // Alle in gleicher Zeile
-        for (let c = 0; c < size; c++) {
-            neighbors.push(row * size + c);
-        }
-    } else if (state.activeAxis === 'z') {
-        // Diagonale
-        for (let d = -size; d < size; d++) {
-            const nr = row + d;
-            const nc = col + d;
-            if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
-                neighbors.push(nr * size + nc);
-            }
-        }
+      entries.forEach(([id, c]) => {
+        out.push(`<div class="stage-entry"><span class="id">${id}</span><span class="pos">(${c.x}, ${c.y}, ${c.z})</span></div>`);
+      });
     }
 
-    neighbors.forEach(i => {
-        if (i !== index) {
-            set.add(i);
-            const cell = cells[i];
-            cell.classList.add('filled', 'active');
-            cell.classList.remove('triggered');
-            void cell.offsetWidth;
-            cell.classList.add('triggered');
-        }
-    });
-    updateCount(level);
-}
+    coordBox.innerHTML = out.join('');
+    document.getElementById('coordCount').textContent = `${entries.length} registriert`;
+  }
 
-// ============================================================
-// 6. LOG
-// ============================================================
-function log(msg, className = '') {
-    const logDiv = document.getElementById('log');
-    const entry = document.createElement('div');
-    entry.className = 'entry';
-    const time = new Date().toLocaleTimeString();
-    entry.innerHTML = `
-        <span class="time">[${time}]</span>
-        <span class="msg ${className}">${msg}</span>
-    `;
-    logDiv.appendChild(entry);
-    logDiv.scrollTop = logDiv.scrollHeight;
-    state.log.push({ time, msg, className });
-    if (state.log.length > 100) {
-        state.log.shift();
-        logDiv.removeChild(logDiv.firstChild);
+  // ─── 6. LOG ANZEIGEN ──────────────────────────────────────────
+  function renderLog() {
+    const entries = (Aufzug.getSharedLog && Aufzug.getSharedLog()) || [];
+    logBox.innerHTML = '';
+    entries.slice().reverse().forEach(e => {
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.innerHTML = `
+        <span class="time">[${e.time || '--:--:--'}]</span>
+        <span class="floor">${e.floor || 'system'}</span>
+        <span class="msg">${e.msg || ''}</span>
+      `;
+      logBox.appendChild(entry);
+    });
+    document.getElementById('logCount').textContent = `${entries.length} Einträge`;
+  }
+
+  // ─── 7. SYNC-FUNKTIONEN ──────────────────────────────────────
+  let syncCount = 0;
+
+  function doSync(message) {
+    const msg = message || syncInput.value.trim() || 'sync:orakel';
+    syncCount++;
+
+    const led = document.getElementById('ledSync');
+    led.className = 'led sync';
+    setTimeout(() => { led.className = 'led'; }, 400);
+
+    if (Aufzug.log) {
+      Aufzug.log(`SYNC: ${msg}`, '🛗 ROOT');
     }
-}
 
-// ============================================================
-// 7. EVENT BINDING
-// ============================================================
-document.querySelectorAll('.btn-trigger[data-level]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const level = parseInt(btn.dataset.level);
-        triggerLevel(level);
-        btn.classList.toggle('active');
+    // An alle Etagen per postMessage senden — funktioniert nur, wenn
+    // diese Seite die Etagen tatsächlich als <iframe> einbettet. Aktuell
+    // hat diese index.html KEINE iframes (Etagen werden per <a href>
+    // als eigene Seiten aufgerufen) — dieser Teil ist also ein Haken für
+    // eine spätere iframe-basierte Corridor-Ansicht, aktuell ein no-op.
+    document.querySelectorAll('iframe').forEach(iframe => {
+      try {
+        iframe.contentWindow.postMessage({ type: 'arg.sync', payload: msg, from: 'orakel' }, '*');
+      } catch (_) {}
     });
-});
 
-document.querySelectorAll('.btn-trigger[data-axis]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const axis = btn.dataset.axis;
-        // Toggle: Wenn gleiche Achse, deaktivieren
-        if (state.activeAxis === axis) {
-            state.activeAxis = null;
-            btn.classList.remove('active');
-            log(`Achse ${axis.toUpperCase()} deaktiviert`);
-        } else {
-            document.querySelectorAll('.btn-trigger[data-axis]').forEach(b => b.classList.remove('active'));
-            state.activeAxis = axis;
-            btn.classList.add('active');
-            triggerAxis(axis);
-        }
-    });
-});
+    document.getElementById('fSyncCount').textContent = syncCount;
+    renderLog();
+  }
 
-document.getElementById('btn-sync').addEventListener('click', triggerSync);
-document.getElementById('btn-reset').addEventListener('click', triggerReset);
-document.getElementById('btn-auto').addEventListener('click', toggleAuto);
+  function broadcastSync() {
+    doSync(syncInput.value.trim() || 'broadcast:orakel');
+  }
 
-// ============================================================
-// 8. TASTATUR-KURZBEFEHLE
-// ============================================================
-document.addEventListener('keydown', (e) => {
-    if (e.key === '1') triggerLevel(1);
-    if (e.key === '2') triggerLevel(2);
-    if (e.key === '3') triggerLevel(3);
-    if (e.key === 'x') document.querySelector('[data-axis="x"]').click();
-    if (e.key === 'y') document.querySelector('[data-axis="y"]').click();
-    if (e.key === 'z') document.querySelector('[data-axis="z"]').click();
-    if (e.key === 's') triggerSync();
-    if (e.key === 'r') triggerReset();
-    if (e.key === ' ') { e.preventDefault(); toggleAuto(); }
-});
+  function resetAll() {
+    syncCount = 0;
+    document.getElementById('fSyncCount').textContent = '0';
+    if (Aufzug.getSharedLog && Array.isArray(Aufzug.getSharedLog())) {
+      Aufzug.getSharedLog().length = 0; // funktioniert jetzt korrekt, da _log ein echter Verweis ist
+    }
+    renderLog();
+    const led = document.getElementById('ledSystem');
+    led.className = 'led';
+    setTimeout(() => { led.className = 'led on'; }, 300);
+  }
 
-// ============================================================
-// 9. INIT
-// ============================================================
-[1, 2, 3].forEach(level => buildGrid(level));
+  // ─── 8. EVENT-BINDING ─────────────────────────────────────────
+  document.getElementById('btnSync').addEventListener('click', () => doSync());
+  document.getElementById('btnBroadcast').addEventListener('click', broadcastSync);
+  document.getElementById('btnResetAll').addEventListener('click', resetAll);
 
-// Initial ein paar Zellen aktivieren für Demo
-setTimeout(() => {
-    [1, 2, 3].forEach(level => {
-        const cfg = LEVELS[level];
-        const set = state.activeCells[level];
-        const grid = document.getElementById(cfg.gridId);
-        const cells = grid.querySelectorAll('.cell');
-        // Muster: jede 3. Zelle
-        cells.forEach((cell, i) => {
-            if (i % 3 === 0) {
-                set.add(i);
-                cell.classList.add('filled');
-            }
-        });
-        updateCount(level);
-    });
-    log('⚡ Initiales Muster geladen (jede 3. Zelle)');
-}, 100);
+  syncInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doSync();
+  });
 
-console.log('⚡ RESPO TRIGGER ENGINE geladen');
-console.log('⌨️  1,2,3 = Etagen  |  x,y,z = Achsen  |  s = Sync  |  r = Reset  |  space = Auto');
+  // ─── 9. TASTATUR ──────────────────────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 's' || e.key === 'S') { e.preventDefault(); doSync(); }
+    if (e.key === 'b' || e.key === 'B') { e.preventDefault(); broadcastSync(); }
+    if (e.key === 'r' || e.key === 'R') { e.preventDefault(); resetAll(); }
+  });
 
+  // ─── 10. POSTMESSAGE-EMPFAENGER (von Etagen) ──────────────────
+  window.addEventListener('message', (event) => {
+    const data = event.data;
+    if (data && data.type === 'arg.sync') {
+      const from = data.from || 'unbekannt';
+      const payload = data.payload || '';
+      syncInput.value = payload;
+      document.getElementById('fSyncCount').textContent = ++syncCount;
+      if (Aufzug.log) {
+        Aufzug.log(`📨 Empfangen von ${from}: ${payload}`, '🛗 ROOT');
+      }
+      renderLog();
+    }
+    if (data && data.type === 'etage.ready') {
+      const from = data.from || 'unbekannt';
+      if (!COORD.get(from)) {
+        const idx = Aufzug.FLOORS.findIndex(f => f.id === from);
+        COORD.register(from, idx + 1, 0, 0);
+        renderCoords();
+        renderFloors();
+      }
+    }
+  });
+
+  // ─── 11. INIT ──────────────────────────────────────────────────
+  function init() {
+    if (Aufzug.init) {
+      Aufzug.init({ currentId: 'root', basePath: '' });
+    }
+
+    renderFloors();
+    renderCoords();
+    renderLog();
+
+    document.getElementById('fSyncCount').textContent = '0';
+    document.getElementById('ledSystem').className = 'led on';
+    document.getElementById('ledReich').className = 'led pulse';
+
+    if (Aufzug.log) {
+      Aufzug.log('🌀 STAGE‑Reich · Corridor · Legitimation · bereit', '🛗 ROOT');
+    }
+    renderLog();
+
+    console.log('🌀 STAGE‑Reich initialisiert');
+    console.log('📐 Achsen:', Object.keys(COORD.axes || {}));
+    console.log('🏢 Stages:', Object.keys(COORD.stages || {}));
+    console.log('⌨️  s=Sync  b=Broadcast  r=Reset');
+  }
+
+  if (document.readyState === 'complete') {
+    init();
+  } else {
+    window.addEventListener('load', init);
+  }
 </script>
+
 </body>
 </html>
